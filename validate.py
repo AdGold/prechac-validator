@@ -30,7 +30,7 @@ class Juggler:
         self.throws = []
         hand = RIGHT
         for throw in throws:
-            throwRE = '\d+(?:\.\d*)?x?[a-p]?x?\*?'
+            throwRE = '\d+(?:\.\d*)?x?[a-p]?x?'
             match = re.match(r'\((%s),(%s)\)!?$'%(throwRE,throwRE), throw)
             if match:
                 left, right = match.groups()
@@ -39,12 +39,15 @@ class Juggler:
                     self.throws.append(Beat('',''))
                     hand = other(hand)
             else:
+                if throw[0] in 'RL':
+                    hand = (throw[0] == 'R')
                 if throw[-1] == '*':
                     hand = other(hand)
+                throw = throw.strip('*').strip('R').strip('L')
                 if hand == LEFT:
-                    self.throws.append(Beat(throw.strip('*'), ''))
+                    self.throws.append(Beat(throw, ''))
                 else:
-                    self.throws.append(Beat('', throw.strip('*')))
+                    self.throws.append(Beat('', throw))
             hand = other(hand)
 
     def __repr__(self):
@@ -80,7 +83,7 @@ class Prechac:
                     time, side, jug = land(LEFT, *throw.left)
                     if not self.jugglers[jug].throws[time].lands[side]:
                         self.valid = False
-                        print('at', juggler, j, throw, i, 'land', time, side, jug)
+                        print('at juggler %d:'%j, juggler, 'throw %d:'%i, throw, 'land (time,side,jug):', time, side, jug)
                         #return
                     else:
                         self.jugglers[jug].throws[time].lands[side] -= 1
@@ -89,7 +92,7 @@ class Prechac:
                     time, side, jug = land(RIGHT, *throw.right)
                     if not self.jugglers[jug].throws[time].lands[side]:
                         self.valid = False
-                        print('at', juggler, j, throw, i, 'land', time, side, jug)
+                        print('at juggler %d:'%j, juggler, 'throw %d:'%i, throw, 'land (time,side,jug):', time, side, jug)
                         #return
                     else:
                         self.jugglers[jug].throws[time].lands[side] -= 1
@@ -102,4 +105,8 @@ class Prechac:
 
 test = lambda s: Prechac(s).valid
 
-p = Prechac('<3p 3* 3 3p 3 3 | 3px 3 3 3px 3* 3>')
+#test hurries
+#p = Prechac('<3p 3* 3 3p 3 3 | 3px 3 3 3px 3* 3>')
+
+#test sync
+#p = Prechac('<(4x,4xp)|(4x,4xp)>')
