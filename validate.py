@@ -112,3 +112,7 @@ test = lambda s: Prechac(s).valid
 assert(Prechac('<(4x,4xp)|(4x,4xp)>').valid)
 #test hand specifiers
 assert(Prechac('<4px 3|L3 4px>').valid)
+
+#jims: <R3p R3 L3 R3p L3 R3 L3p L3 R3 L3p R3 L3 | R3px L3 R3 L3px L3 R3 L3px R3 L3 R3px R3 L3 >
+#jims: <3p R3 3 3p 3 3 3p L3 3 3p 3 3 | 3px 3 3 3px L3 3 3px 3 3 3px R3 3 >
+print(test('<3p R3 3 3p 3 3 3p L3 3 3p 3 3 | 3px 3 3 3px L3 3 3px 3 3 3px R3 3 >'))
