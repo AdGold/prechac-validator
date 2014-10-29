@@ -109,4 +109,6 @@ test = lambda s: Prechac(s).valid
 #p = Prechac('<3p 3* 3 3p 3 3 | 3px 3 3 3px 3* 3>')
 
 #test sync
-#p = Prechac('<(4x,4xp)|(4x,4xp)>')
+assert(Prechac('<(4x,4xp)|(4x,4xp)>').valid)
+#test hand specifiers
+assert(Prechac('<4px 3|L3 4px>').valid)
