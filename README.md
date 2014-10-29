@@ -10,3 +10,6 @@ print(p.valid)
 #or
 print(test('<3p 3 3 | 3p 3 3>'))
 ```
+Limitations:
+* No support for decimal passes
+* No support for hurries
