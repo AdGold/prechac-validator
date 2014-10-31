@@ -116,3 +116,5 @@ assert(Prechac('<4px 3|L3 4px>').valid)
 #jims: <R3p R3 L3 R3p L3 R3 L3p L3 R3 L3p R3 L3 | R3px L3 R3 L3px L3 R3 L3px R3 L3 R3px R3 L3 >
 #jims: <3p R3 3 3p 3 3 3p L3 3 3p 3 3 | 3px 3 3 3px L3 3 3px 3 3 3px R3 3 >
 print(test('<3p R3 3 3p 3 3 3p L3 3 3p 3 3 | 3px 3 3 3px L3 3 3px 3 3 3px R3 3 >'))
+
+#martin's 3: <(2 , 4xp) (4xp , 2x) (4x , 2) (2 , 4xp) (4xp , 2) (2 , 4x) * (4xp , 2) (2x , 4xp) (2 , 4x) (4xp , 2) (2 , 4xp) (4x , 2) | (2 , 4p) (4p , 2) (2 , 4x) (4p , 2) (2x , 4p) (2 , 4x) * (4p , 2) (2 , 4p) (4x , 2) (2 , 4p) (4p , 2x) (4x , 2) >
