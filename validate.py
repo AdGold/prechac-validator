@@ -19,12 +19,12 @@ class Beat:
         self.lands = [1 if self.left else 0, 1 if self.right else 0]
 
     def get_throw(self, throw):
-        throwM = re.match(r'(\d+(?:\.\d*)?)(x?)(?:([rp])(\d)?)?(x?)$', throw)
+        throwM = re.match(r'(\d+(?:\.\d*)?)(x?)(?:([rp])(\d)?)?(x?)(\*?)$', throw)
         if throwM:
-            th, x1, passType, passTo, x2 = throwM.groups()
+            th, x1, passType, passTo, x2, hurry = throwM.groups()
             if passType == 'p' and passTo is None:
                 passType, passTo = 'r', 1
-            return (float(th), passType or '', int(passTo or 0), (x1+x2 == 'x') )
+            return (float(th), passType or '', int(passTo or 0), (x1+x2 == 'x') , hurry)
         return None
 
     def __repr__(self):
@@ -106,30 +106,10 @@ class Prechac:
             for i,throw in enumerate(juggler.throws):
                 self.check_throw(throw.left, LEFT, j, i)
                 self.check_throw(throw.right, RIGHT, j, i)
-                continue
-                land = lambda side,th,pt,pto,x: (int((th+i)%period), side ^ crossing(th, x), (pto+j)%nJugs)
-
-                if throw.left:
-                    time, side, jug = land(LEFT, *throw.left)
-                    if not self.jugglers[jug].throws[time].lands[side]:
-                        self.valid = False
-                        print('at juggler %d:'%j, juggler, 'throw %d:'%i, throw, 'land (time,side,jug):', time, side, jug)
-                        #return
-                    else:
-                        self.jugglers[jug].throws[time].lands[side] -= 1
-
-                if throw.right:
-                    time, side, jug = land(RIGHT, *throw.right)
-                    if not self.jugglers[jug].throws[time].lands[side]:
-                        self.valid = False
-                        print('at juggler %d:'%j, juggler, 'throw %d:'%i, throw, 'land (time,side,jug):', time, side, jug)
-                        #return
-                    else:
-                        self.jugglers[jug].throws[time].lands[side] -= 1
 
     def check_throw(self, throw, side, juggler, beat):
         if throw is None: return
-        ss, ptype, pto, x = throw
+        ss, ptype, pto, x, hurry = throw
         if ptype == 'r':
             juggler_to = (juggler + pto) % self.num_jugs
         elif ptype == 'p':
