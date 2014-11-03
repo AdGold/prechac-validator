@@ -3,10 +3,11 @@ import re
 LEFT, RIGHT = 0,1
 other = lambda h: 1-h
 formatSS = lambda ss: ('%.3f'%ss).rstrip('0').rstrip('.')
+
 def formatThrow(throw):
     if throw is None: return ''
     passMod = throw[1]
-    if passMod == 'r' and throw[2] == 1:
+    if passMod == 'r' and throw[2] == 1: #r1 is the same as p so simplify
         passMod = 'p'
     elif passMod:
         passMod += str(throw[2] or '')
@@ -24,7 +25,7 @@ class Beat:
             th, x1, passType, passTo, x2, hurry = throwM.groups()
             if passType == 'p' and passTo is None:
                 passType, passTo = 'r', 1
-            return (float(th), passType or '', int(passTo or 0), (x1+x2 == 'x') , hurry)
+            return (float(th), passType or '', int(passTo or 0), (x1+x2 == 'x') , hurry == '*')
         return None
 
     def __repr__(self):
@@ -44,7 +45,7 @@ class Juggler:
         self.throws = []
         hand = RIGHT
         for throw in throws:
-            throwRE = '\d+(?:\.\d*)?x?(?:[rp]\d?)?x?'
+            throwRE = '\d+(?:\.\d*)?x?(?:[rp]\d?)?x?\*?'
             match = re.match(r'\((%s),(%s)\)!?$'%(throwRE,throwRE), throw)
             #TODO fix handling of hurries here
             if match:
@@ -54,11 +55,11 @@ class Juggler:
                     self.throws.append(Beat('',''))
                     hand = other(hand)
             else:
-                if throw[0] in 'RL':
-                    hand = (throw[0] == 'R')
                 if throw[-1] == '*':
                     hand = other(hand)
-                throw = throw.strip('*').strip('R').strip('L')
+                if throw[0] in 'RL':
+                    hand = (throw[0] == 'R')
+                throw = throw.strip('R').strip('L')
                 if hand == LEFT:
                     self.throws.append(Beat(throw, ''))
                 else:
@@ -69,7 +70,7 @@ class Juggler:
         return 'Juggler(%r)' % str(self)
 
     def __str__(self):
-        return ' '.join(str(th) for th in self.throws);
+        return ' '.join(str(th) for th in self.throws)
 
     def has_decimal(self):
         return any(th.has_decimal() for th in self.throws)
@@ -100,7 +101,6 @@ class Prechac:
             0#raise ValueError('Prechac not valid')
 
     def validate(self):
-        crossing = lambda ss, x: (int(ss) % 2) ^ x #TODO - this won't work for decimals :(
         self.valid = True
         for j,juggler in enumerate(self.jugglers):
             for i,throw in enumerate(juggler.throws):
