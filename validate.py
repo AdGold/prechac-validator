@@ -18,6 +18,7 @@ class Beat:
         self.left = self.get_throw(left)
         self.right = self.get_throw(right)
         self.lands = [1 if self.left else 0, 1 if self.right else 0]
+        self.neg1x = [0,0]
 
     def get_throw(self, throw):
         throwM = re.match(r'(\d+(?:\.\d*)?)(x?)(?:([rp])(\d)?)?(x?)(\*?)$', throw)
@@ -27,6 +28,12 @@ class Beat:
                 passType, passTo = 'r', 1
             return (float(th), passType or '', int(passTo or 0), (x1+x2 == 'x') , hurry == '*')
         return None
+
+    def get_hand(self, side):
+        if side == LEFT:
+            return self.left
+        else:
+            return self.right
 
     def __repr__(self):
         return 'Beat(%r,%r)' % (formatThrow(self.left), formatThrow(self.right))
@@ -47,7 +54,6 @@ class Juggler:
         for throw in throws:
             throwRE = '\d+(?:\.\d*)?x?(?:[rp]\d?)?x?\*?'
             match = re.match(r'\((%s),(%s)\)!?$'%(throwRE,throwRE), throw)
-            #TODO fix handling of hurries here
             if match:
                 left, right = match.groups()
                 self.throws.append(Beat(left, right))
@@ -97,11 +103,24 @@ class Prechac:
                 juggler.delay = 0
 
         self.validate()
-        if not self.valid:
-            0#raise ValueError('Prechac not valid')
 
     def validate(self):
         self.valid = True
+        #For hurries, add a -1x on the next beat (same hand)
+        # - lands[i+1] += 1
+        # - lands[i] -= 1
+        for j,juggler in enumerate(self.jugglers):
+            for i,throw in enumerate(juggler.throws):
+                ni = (i + 1) % len(juggler.throws)
+                if throw.left and throw.left[4]:
+                    throw.lands[LEFT] -= 1
+                    juggler.throws[ni].lands[LEFT] += 1
+                    juggler.throws[ni].neg1x[LEFT] = True
+                if throw.right and throw.right[4]:
+                    throw.lands[RIGHT] -= 1
+                    juggler.throws[ni].lands[RIGHT] += 1
+                    juggler.throws[ni].neg1x[RIGHT] = True
+        #Check each throw has a landing spot
         for j,juggler in enumerate(self.jugglers):
             for i,throw in enumerate(juggler.throws):
                 self.check_throw(throw.left, LEFT, j, i)
@@ -118,7 +137,7 @@ class Prechac:
             juggler_to = juggler
         new_ss = ss + self.jugglers[juggler].delay - self.jugglers[juggler_to].delay
         if not new_ss.is_integer():
-            self.error = 'seems like a bad throw value in %f' % ss
+            self.error = 'seems like a bad throw value of %f' % ss
             return False
         new_ss = int(new_ss)
         beat_to = (beat + new_ss) % self.period
@@ -132,7 +151,16 @@ class Prechac:
         #print('ss,new_ss,x,side,diff_hand:',ss,new_ss,x,side,diff_hand)
         side_to = diff_hand ^ side ^ x ^ (new_ss % 2)
         #print('land (time,side,jug):', beat_to, side_to, juggler_to)
-        #TODO add hurry stuff
+        #Hurry validation:
+        # - add -1x on the beat after a hurry (above)
+        # - if a ball is landing on a beat where the other hand is doing a hurry then skip to the next beat
+        # - - unless this beat/hand also has a -1x on it
+        # - not sure if this method is completely correct...
+        max_left = self.period
+        throws = self.jugglers[juggler_to].throws
+        while max_left and throws[beat_to].get_hand(other(side_to)) and throws[beat_to].get_hand(other(side_to))[4] and not throws[beat_to].neg1x[side_to]:
+            beat_to = (beat_to + 1) % self.period
+            max_left -= 1
         if not self.jugglers[juggler_to].throws[beat_to].lands[side_to]:
             #print('at juggler %d:'%juggler, self.jugglers[juggler], 'throw %d:'%beat, 'land (time,side,jug):', beat_to, side_to, juggler_to)
             self.valid = False
@@ -145,22 +173,16 @@ class Prechac:
     def __str__(self):
         return '<%s>' % ' | '.join(str(j) for j in self.jugglers)
 
-test = lambda s: Prechac(s).valid
-
-#test hurries
-#p = Prechac('<3p 3* 3 3p 3 3 | 3px 3 3 3px 3* 3>')
-
-
-#print('test sync')
-assert(Prechac('<(4x,4xp)|(4x,4xp)>').valid)
-#print('test hand specifiers')
-assert(Prechac('<4p 3|L3 4p>').valid)
-#print('test decimal')
-assert(Prechac('<3.5p|3.5p>').valid)
-
-#jims: <R3p R3 L3 R3p L3 R3 L3p L3 R3 L3p R3 L3 | R3px L3 R3 L3px L3 R3 L3px R3 L3 R3px R3 L3 >
-#jims: <3p R3 3 3p 3 3 3p L3 3 3p 3 3 | 3px 3 3 3px L3 3 3px 3 3 3px R3 3 >
-#print(test('<3p R3 3 3p 3 3 3p L3 3 3p 3 3 | 3px 3 3 3px L3 3 3px 3 3 3px R3 3 >'))
-#print(test('<3p 3* 3 3px 3 3|3px 3 3 3p 3* 3>'))
-
-#martin's 3: <(2 , 4xp) (4xp , 2x) (4x , 2) (2 , 4xp) (4xp , 2) (2 , 4x) * (4xp , 2) (2x , 4xp) (2 , 4x) (4xp , 2) (2 , 4xp) (4x , 2) | (2 , 4p) (4p , 2) (2 , 4x) (4p , 2) (2x , 4p) (2 , 4x) * (4p , 2) (2 , 4p) (4x , 2) (2 , 4p) (4p , 2x) (4x , 2) >
+def tests():
+    #test sync
+    assert(Prechac('<(4x,4xp)|(4x,4xp)>').valid)
+    #test hand specifiers
+    assert(Prechac('<4p 3|L3 4p>').valid)
+    #test decimal
+    assert(Prechac('<3.5p|3.5p>').valid)
+    #test hurry
+    assert(Prechac('<3x 3*>').valid)
+    #test hurry in passing
+    assert(Prechac('<3p 3* 3 3px 3 3|3px 3 3 3p 3* 3>').valid)
+    #large sync test - martins 3 count in sync
+    assert(Prechac('<(2 , 4xp) (4xp , 2x) (4x , 2) (2 , 4xp) (4xp , 2) (2 , 4x) * (4xp , 2) (2x , 4xp) (2 , 4x) (4xp , 2) (2 , 4xp) (4x , 2) | (2 , 4p) (4p , 2) (2 , 4x) (4p , 2) (2x , 4p) (2 , 4x) * (4p , 2) (2 , 4p) (4x , 2) (2 , 4p) (4p , 2x) (4x , 2) >').valid)
