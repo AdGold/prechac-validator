@@ -13,6 +13,8 @@ def formatThrow(throw):
         passMod += str(throw[2] or '')
     return formatSS(throw[0]) + passMod + 'x'*throw[3]
 
+class ParseException(Exception): pass
+
 class Beat:
     def __init__(self, left, right):
         self.left = self.get_throw(left)
@@ -53,14 +55,15 @@ class Juggler:
         hand = RIGHT
         for throw in throws:
             throwRE = '\d+(?:\.\d*)?x?(?:[rp]\d?)?x?\*?'
-            match = re.match(r'\((%s),(%s)\)!?$'%(throwRE,throwRE), throw)
-            if match:
-                left, right = match.groups()
+            sync = re.match(r'\((%s),(%s)\)!?$'%(throwRE,throwRE), throw)
+            async = re.match(r'[LR]?%s$'%throwRE, throw)
+            if sync:
+                left, right = sync.groups()
                 self.throws.append(Beat(left, right))
                 if throw[-1] != '!':
                     self.throws.append(Beat('',''))
                     hand = other(hand)
-            else:
+            elif async:
                 if throw[-1] == '*':
                     hand = other(hand)
                 if throw[0] in 'RL':
@@ -70,6 +73,8 @@ class Juggler:
                     self.throws.append(Beat(throw, ''))
                 else:
                     self.throws.append(Beat('', throw))
+            else:
+                raise ParseException('Bad throw format')
             hand = other(hand)
 
     def __repr__(self):
@@ -185,4 +190,12 @@ def tests():
     #test hurry in passing
     assert(Prechac('<3p 3* 3 3px 3 3|3px 3 3 3p 3* 3>').valid)
     #large sync test - martins 3 count in sync
-    assert(Prechac('<(2 , 4xp) (4xp , 2x) (4x , 2) (2 , 4xp) (4xp , 2) (2 , 4x) * (4xp , 2) (2x , 4xp) (2 , 4x) (4xp , 2) (2 , 4xp) (4x , 2) | (2 , 4p) (4p , 2) (2 , 4x) (4p , 2) (2x , 4p) (2 , 4x) * (4p , 2) (2 , 4p) (4x , 2) (2 , 4p) (4p , 2x) (4x , 2) >').valid)
+    assert(Prechac('<(2,4xp) (4xp,2x) (4x,2) (2,4xp) (4xp,2) (2,4x) (4xp,2) (2x,4xp) (2,4x) (4xp,2) (2,4xp) (4x,2) | (2,4p) (4p,2) (2,4x) (4p,2) (2x,4p) (2,4x) (4p,2) (2,4p) (4x,2) (2,4p) (4p,2x) (4x,2) >').valid)
+    #more complex hurry test
+    assert(Prechac('<(3x*,3x*)! R3* (3x*,3x*)! L3*>').valid)
+    #edge case hurry pattern
+    # <4x*> is invalid here because it assumes all throws would be from the same hand so it must be written:
+    assert(Prechac('<R4x* L4x*>').valid)
+    print('tests done')
+
+#tests()
