@@ -196,9 +196,11 @@ def tests():
     assert(Prechac('<(2,4xp) (4xp,2x) (4x,2) (2,4xp) (4xp,2) (2,4x) (4xp,2) (2x,4xp) (2,4x) (4xp,2) (2,4xp) (4x,2) | (2,4p) (4p,2) (2,4x) (4p,2) (2x,4p) (2,4x) (4p,2) (2,4p) (4x,2) (2,4p) (4p,2x) (4x,2) >').valid)
     #more complex hurry test
     assert(Prechac('<(3x*,3x*)! R3* (3x*,3x*)! L3*>').valid)
+    #more complex hurry test, another way of writing it
+    assert(Prechac('<(3x*,3x*)! (3*,0)! (3x*,3x*)! (0,3*)!>').valid)
     #edge case hurry pattern
     # <4x*> is invalid here because it assumes all throws would be from the same hand so it must be written:
     assert(Prechac('<R4x* L4x*>').valid)
     print('tests done')
 
-#tests()
+tests()
